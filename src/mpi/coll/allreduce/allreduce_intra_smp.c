@@ -17,14 +17,16 @@ int MPIR_Allreduce_intra_smp(const void *sendbuf, void *recvbuf, MPI_Aint count,
         /* take care of the MPI_IN_PLACE case. For reduce,
          * MPI_IN_PLACE is specified only on the root;
          * for allreduce it is specified on all processes. */
+      
+      // By passing MPI_IN_PLACE as the send buffer, the MPI routine knows that the send and receive buffer are one same buffer.
 
         if ((sendbuf == MPI_IN_PLACE) && (comm_ptr->node_comm->rank != 0)) {
             /* IN_PLACE and not root of reduce. Data supplied to this
              * allreduce is in recvbuf. Pass that as the sendbuf to reduce. */
 
             mpi_errno =
-                MPIR_Reduce(recvbuf, NULL, count, datatype, op, 0, comm_ptr->node_comm, errflag);
-            if (mpi_errno) {
+                MPIR_Reduce(recvbuf, NULL, count, datatype, op, 0, comm_ptr->node_comm, errflag); // local reduce, but the sendbuf is the recvbuf
+            if (mpi_errno) { // bu yong ka le.
                 /* for communication errors, just record the error but continue */
                 *errflag =
                     MPIX_ERR_PROC_FAILED ==
@@ -32,10 +34,10 @@ int MPIR_Allreduce_intra_smp(const void *sendbuf, void *recvbuf, MPI_Aint count,
                 MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
                 MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
             }
-        } else {
+        } else { // if not in_place or if a root
             mpi_errno =
-                MPIR_Reduce(sendbuf, recvbuf, count, datatype, op, 0, comm_ptr->node_comm, errflag);
-            if (mpi_errno) {
+                MPIR_Reduce(sendbuf, recvbuf, count, datatype, op, 0, comm_ptr->node_comm, errflag); // local reduce as normal
+            if (mpi_errno) { // bie kan le.
                 /* for communication errors, just record the error but continue */
                 *errflag =
                     MPIX_ERR_PROC_FAILED ==
